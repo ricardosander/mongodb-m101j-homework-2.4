@@ -32,6 +32,7 @@ import java.util.Random;
 import static com.mongodb.client.model.Filters.eq;
 
 public class UserDAO {
+
     private final MongoCollection<Document> usersCollection;
     private Random random = new SecureRandom();
 
@@ -44,7 +45,6 @@ public class UserDAO {
 
         String passwordHash = makePasswordHash(password, Integer.toString(random.nextInt()));
 
-        // XXX WORK HERE
         Document document = new Document("_id", username).append("password", passwordHash);
 
         if (email != null && !email.equals("")) {
@@ -52,19 +52,26 @@ public class UserDAO {
         }
 
         try {
+
             usersCollection.insertOne(document);
+
             return true;
+
         } catch (MongoWriteException e) {
+
             if (e.getError().getCategory().equals(ErrorCategory.DUPLICATE_KEY)) {
                 System.out.println("Username already in use: " + username);
                 return false;
             }
+
             throw e;
         }
+
     }
 
     public Document validateLogin(String username, String password) {
-        Document user = null;
+
+        Document user;
 
         user = usersCollection.find(new Document("_id", username)).first();
 
@@ -87,17 +94,27 @@ public class UserDAO {
 
 
     private String makePasswordHash(String password, String salt) {
+
         try {
+
             String saltedAndHashed = password + "," + salt;
+
             MessageDigest digest = MessageDigest.getInstance("MD5");
+
             digest.update(saltedAndHashed.getBytes());
+
             BASE64Encoder encoder = new BASE64Encoder();
+
             byte hashedBytes[] = (new String(digest.digest(), "UTF-8")).getBytes();
+
             return encoder.encode(hashedBytes) + "," + salt;
+
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("MD5 is not available", e);
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("UTF-8 unavailable?  Not a chance", e);
         }
+
     }
+
 }
